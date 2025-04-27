@@ -122,4 +122,72 @@ router.get('/', async (req, res) => {
     }
 });
 
+
+router.get('/stats', async (req, res) => {
+    try {
+        const currentYear = new Date().getFullYear();
+
+        // 1. Total unique users (based on email)
+        const totalUsers = await Feedback.distinct('email').then(emails => emails.length);
+
+        const totalFeedbacks = await Feedback.countDocuments();
+
+        // 2. Category-wise feedback count
+        const categoryStats = await Feedback.aggregate([
+            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $project: { _id: 0, category: '$_id', count: 1 } }
+        ]);
+
+        // 3. Monthly feedback count for current year only
+        const monthlyStats = await Feedback.aggregate([
+            {
+                $match: {
+                    timestamp: {
+                        $gte: new Date(`${currentYear}-01-01`),
+                        $lt: new Date(`${currentYear + 1}-01-01`)
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: { $month: '$timestamp' },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // Generate all months for current year with 0 counts
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+
+        const completeMonthlyStats = monthNames.map((monthName, index) => {
+            const monthNumber = index + 1;
+            const monthData = monthlyStats.find(s => s._id === monthNumber);
+            return {
+                year: currentYear,
+                month: monthNumber,
+                monthName,
+                count: monthData ? monthData.count : 0
+            };
+        });
+
+        res.json({
+            success: true,
+            stats: {
+                totalUsers,
+                totalFeedbacks,
+                categories: categoryStats,
+                monthly: completeMonthlyStats,
+            }
+        });
+
+    } catch (err) {
+        console.error('Error fetching stats:', err);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to load stats. Try again later.'
+        });
+    }
+});
+
 module.exports = router;

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import FeedbackDashboard from "@/components/FeedbackDashboard";
 
 export const metadata: Metadata = {
     title: 'Feedback Portal',
@@ -8,6 +9,6 @@ export const metadata: Metadata = {
 
 export default function Home() {
     return (
-        <main>Hello</main>
+        <FeedbackDashboard />
     )
 }

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
         userName: { type: String, required: true },
         email: { type: String, required: true },
         feedbackText: { type: String, required: true },
-        category: { type: String },
+        category: { type: String, default: 'other' },
         timestamp: { type: Date, default: Date.now },
     });
 
